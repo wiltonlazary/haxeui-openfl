@@ -5,11 +5,13 @@ import haxe.ui.backend.openfl.FilterConverter;
 import haxe.ui.backend.openfl.OpenFLStyleHelper;
 import haxe.ui.core.Component;
 import haxe.ui.core.ImageDisplay;
+import haxe.ui.core.Screen;
 import haxe.ui.core.TextDisplay;
 import haxe.ui.core.TextInput;
 import haxe.ui.events.KeyboardEvent;
 import haxe.ui.events.MouseEvent;
 import haxe.ui.events.UIEvent;
+import haxe.ui.focus.FocusManager;
 import haxe.ui.geom.Point;
 import haxe.ui.geom.Rectangle;
 import haxe.ui.styles.Style;
@@ -33,14 +35,33 @@ class ComponentImpl extends ComponentBase {
         #end
         
         addEventListener(Event.ADDED_TO_STAGE, onAddedToStage);
+        addEventListener(Event.REMOVED_FROM_STAGE, onRemovedFromStage);
     }
 
+    @:access(haxe.ui.backend.ScreenImpl)
     private function onAddedToStage(event:Event) {
+        removeEventListener(Event.ADDED_TO_STAGE, onAddedToStage);
+        var component:Component = cast(this, Component);
+        if (component.parentComponent == null && Screen.instance.rootComponents.indexOf(component) == -1) {
+            Screen.instance.rootComponents.push(component);
+            Screen.instance._topLevelComponents.push(component); // TODO: look into removing and using rootComponents only, order / ready() is important
+            FocusManager.instance.pushView(component);
+            Screen.instance.onContainerResize(null);
+        }
         recursiveReady();
     }
 
+    @:access(haxe.ui.backend.ScreenImpl)
+    private function onRemovedFromStage(event:Event) {
+        removeEventListener(Event.REMOVED_FROM_STAGE, onRemovedFromStage);
+        var component:Component = cast(this, Component);
+        if (component.parentComponent == null && Screen.instance.rootComponents.indexOf(component) != -1) {
+            Screen.instance.rootComponents.remove(component);
+            Screen.instance._topLevelComponents.remove(component); // TODO: look into removing and using rootComponents only, order / ready() is important
+        }
+    }
+    
     private function recursiveReady() {
-        removeEventListener(Event.ADDED_TO_STAGE, onAddedToStage);
         var component:Component = cast(this, Component);
         var isReady = component.isReady;
         component.ready();
@@ -203,8 +224,8 @@ class ComponentImpl extends ComponentBase {
     }
     
     private override function handleVisibility(show:Bool):Void {
-        if (show != this.visible) {
-            this.visible = show;
+        if (show != super.visible) {
+            super.visible = show;
         }
     }
 
@@ -232,7 +253,7 @@ class ComponentImpl extends ComponentBase {
         switch (type) {
             case MouseEvent.MOUSE_MOVE | MouseEvent.MOUSE_OVER | MouseEvent.MOUSE_OUT
                 | MouseEvent.MOUSE_DOWN | MouseEvent.MOUSE_UP | MouseEvent.MOUSE_WHEEL
-                | MouseEvent.CLICK | MouseEvent.RIGHT_CLICK
+                | MouseEvent.CLICK | MouseEvent.DBL_CLICK | MouseEvent.RIGHT_CLICK
                 | MouseEvent.RIGHT_MOUSE_DOWN | MouseEvent.RIGHT_MOUSE_UP:
                 if (_eventMap.exists(type) == false) {
                     _eventMap.set(type, listener);
@@ -259,7 +280,7 @@ class ComponentImpl extends ComponentBase {
         switch (type) {
             case MouseEvent.MOUSE_MOVE | MouseEvent.MOUSE_OVER | MouseEvent.MOUSE_OUT
                 | MouseEvent.MOUSE_DOWN | MouseEvent.MOUSE_UP | MouseEvent.MOUSE_WHEEL
-                | MouseEvent.CLICK | MouseEvent.RIGHT_CLICK
+                | MouseEvent.CLICK | MouseEvent.DBL_CLICK | MouseEvent.RIGHT_CLICK
                 | MouseEvent.RIGHT_MOUSE_DOWN | MouseEvent.RIGHT_MOUSE_UP:
                 _eventMap.remove(type);
                 removeEventListener(EventMapper.HAXEUI_TO_OPENFL.get(type), __onMouseEvent);

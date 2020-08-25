@@ -10,12 +10,15 @@ import openfl.display.Bitmap;
 import openfl.display.BitmapData;
 import openfl.display.Loader;
 import openfl.events.Event;
+import openfl.text.Font;
 import openfl.utils.ByteArray;
 
 class AssetsImpl extends AssetsBase {
     private override function getTextDelegate(resourceId:String):String {
         if (Assets.exists(resourceId) == true) {
             return Assets.getText(resourceId);
+        } else if (Resource.listNames().indexOf(resourceId) != -1) {
+            return Resource.getString(resourceId);
         }
         return null;
     }
@@ -99,6 +102,10 @@ class AssetsImpl extends AssetsBase {
                 fontInfo = {
                     data: Assets.getFont(resourceId).fontName
                 }
+            } else if (Resource.listNames().indexOf(resourceId) != -1) {
+                getFontFromHaxeResource(resourceId, function(r, info) {
+                    callback(info);
+                });
             } else {
                 fontInfo = {
                     data: resourceId
@@ -113,7 +120,18 @@ class AssetsImpl extends AssetsBase {
     }
 
     private override function getFontFromHaxeResource(resourceId:String, callback:String->FontInfo->Void) {
-        callback(resourceId, null);
+        var bytes = Resource.getBytes(resourceId);
+        if (bytes == null) {
+            callback(resourceId, null);
+            return;
+        }
+        
+        var font = Font.fromBytes(bytes);
+        Font.registerFont(font);
+        var fontInfo = {
+            data: font.fontName
+        }
+        callback(resourceId, fontInfo);
     }
     
     //***********************************************************************************************************

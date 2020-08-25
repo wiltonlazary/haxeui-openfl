@@ -6,8 +6,8 @@ import openfl.text.TextFieldType;
 import openfl.text.TextFormat;
 
 class TextDisplayImpl extends TextBase {
-    private var PADDING_X:Int = 2;
-    private var PADDING_Y:Int = 2;
+    private var PADDING_X:Int = 4;
+    private var PADDING_Y:Int = 0;
 
     public var textField:TextField;
 
@@ -35,7 +35,9 @@ class TextDisplayImpl extends TextBase {
 
     private override function validateData() {
         if (_text != null) {
-            textField.text = normalizeText(_text);
+            if (_dataSource == null) {
+                textField.text = normalizeText(_text);
+            }
         } else if (_htmlText != null) {
             textField.htmlText = _htmlText;
         }
@@ -52,6 +54,9 @@ class TextDisplayImpl extends TextBase {
             }
 
             var fontSizeValue = Std.int(_textStyle.fontSize);
+            if (_textStyle.fontSize == null) {
+                fontSizeValue = 13;
+            }
             if (format.size != fontSizeValue) {
                 format.size = fontSizeValue;
 
@@ -103,15 +108,18 @@ class TextDisplayImpl extends TextBase {
     }
 
     private override function validatePosition() {
+        _left = Math.round(_left);
+        _top = Math.round(_top);
+        
         #if html5
-        textField.x = _left - PADDING_X + 1;
-        textField.y = _top - PADDING_Y + 1;
+        textField.x = _left;
+        textField.y = _top - 2;
         #elseif flash
-        textField.x = _left - PADDING_X + 0;
-        textField.y = _top - PADDING_Y + 0;
+        textField.x = _left - 3;
+        textField.y = _top - 3;
         #else
-        textField.x = _left - PADDING_X + 1;
-        textField.y = _top - PADDING_Y + 0;
+        textField.x = _left - 1;
+        textField.y = _top - 3;
         #end
     }
 
@@ -121,7 +129,12 @@ class TextDisplayImpl extends TextBase {
         }
 
         if (textField.height != _height) {
+            #if flash
             textField.height = _height;
+            //textField.height = _height + 4;
+            #else
+            textField.height = _height;
+            #end
         }
     }
 
@@ -130,8 +143,9 @@ class TextDisplayImpl extends TextBase {
         
         #if !flash
         _textWidth = textField.textWidth + PADDING_X;
+        //_textWidth = textField.textWidth + PADDING_X;
         #else
-        _textWidth = textField.textWidth;
+        //_textWidth = textField.textWidth - 2;
         #end
         _textHeight = textField.textHeight;
         if (_textHeight == 0) {
@@ -141,8 +155,13 @@ class TextDisplayImpl extends TextBase {
             textField.text = tmpText;
         }
         #if !flash
-        _textHeight += PADDING_Y;
+        //_textHeight += PADDING_Y;
+        #else
+        //_textHeight -= 2;
         #end
+        
+        _textWidth = Math.round(_textWidth);
+        _textHeight = Math.round(_textHeight);
     }
     
     private function normalizeText(text:String):String {

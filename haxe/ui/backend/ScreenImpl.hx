@@ -65,17 +65,21 @@ class ScreenImpl extends ScreenBase {
         return Lib.current.stage.window.title;
     }
 
-    public override function addComponent(component:Component) {
+    public override function addComponent(component:Component):Component {
         component.scaleX = Toolkit.scaleX;
         component.scaleY = Toolkit.scaleY;
-        _topLevelComponents.push(component);
-        container.addChild(component);
-        onContainerResize(null);
+        if (_topLevelComponents.indexOf(component) == -1) {
+            _topLevelComponents.push(component);
+            container.addChild(component);
+            onContainerResize(null);
+        }
+		return component;
     }
 
-    public override function removeComponent(component:Component) {
+    public override function removeComponent(component:Component):Component {
         _topLevelComponents.remove(component);
         container.removeChild(component);
+		return component;
     }
 
     private override function handleSetComponentIndex(child:Component, index:Int) {
@@ -85,10 +89,10 @@ class ScreenImpl extends ScreenBase {
     private function onContainerResize(event:openfl.events.Event) {
         for (c in _topLevelComponents) {
             if (c.percentWidth > 0) {
-                c.width = ((this.width / Toolkit.scaleX) * c.percentWidth) / 100;
+                c.width = ((this.width) * c.percentWidth) / 100;
             }
             if (c.percentHeight > 0) {
-                c.height = ((this.height / Toolkit.scaleY) * c.percentHeight) / 100;
+                c.height = ((this.height) * c.percentHeight) / 100;
             }
         }
         __onStageResize();
@@ -128,7 +132,7 @@ class ScreenImpl extends ScreenBase {
     private override function mapEvent(type:String, listener:UIEvent->Void) {
         switch (type) {
             case MouseEvent.MOUSE_MOVE | MouseEvent.MOUSE_OVER | MouseEvent.MOUSE_OUT
-                | MouseEvent.MOUSE_DOWN | MouseEvent.MOUSE_UP | MouseEvent.CLICK
+                | MouseEvent.MOUSE_DOWN | MouseEvent.MOUSE_UP | MouseEvent.CLICK | MouseEvent.DBL_CLICK
                 | MouseEvent.RIGHT_MOUSE_DOWN | MouseEvent.RIGHT_MOUSE_UP | MouseEvent.RIGHT_CLICK:
                 if (_mapping.exists(type) == false) {
                     _mapping.set(type, listener);
@@ -151,7 +155,7 @@ class ScreenImpl extends ScreenBase {
     private override function unmapEvent(type:String, listener:UIEvent->Void) {
         switch (type) {
             case MouseEvent.MOUSE_MOVE | MouseEvent.MOUSE_OVER | MouseEvent.MOUSE_OUT
-                | MouseEvent.MOUSE_DOWN | MouseEvent.MOUSE_UP | MouseEvent.CLICK
+                | MouseEvent.MOUSE_DOWN | MouseEvent.MOUSE_UP | MouseEvent.CLICK | MouseEvent.DBL_CLICK
                 | MouseEvent.RIGHT_MOUSE_DOWN | MouseEvent.RIGHT_MOUSE_UP | MouseEvent.RIGHT_CLICK:
                 _mapping.remove(type);
                 Lib.current.stage.removeEventListener(EventMapper.HAXEUI_TO_OPENFL.get(type), __onMouseEvent);
