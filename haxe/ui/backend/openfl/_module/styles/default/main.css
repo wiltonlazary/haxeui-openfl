@@ -1,5 +1,5 @@
 .label, .textfield, .textarea {
-    font-name: "fonts/Roboto-Regular.ttf";
+    font-name: "haxeui-openfl/styles/fonts/Roboto-Regular.ttf";
     __font-name: "_sans";
     font-size: 13px;
 }
@@ -49,6 +49,7 @@
 }
 
 .stepper-textfield {
+    margin-top: -1px;
 }
 
 .property-group-item-editor-container .numberstepper {
@@ -56,8 +57,12 @@
 }
 
 .property-grid {
-    padding-bottom: 0px;
 }
+
+.tooltip {
+    filter: none;
+}
+
 /************************************************************************
 ** MOBILE VARIANTS
 *************************************************************************/

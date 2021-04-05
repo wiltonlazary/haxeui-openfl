@@ -5,12 +5,12 @@
         "_ibilon",
         "aW4KeNiNG"
     ],
-    "version": "1.1.0",
+    "version": "1.2.3",
     "dependencies": {
         "openfl": "",
         "haxeui-core": ""
     },
-    "releasenote": "1.1 release",
+    "releasenote": "Tweaks and fixes",
     "tags": [
         "ui",
         "gui",

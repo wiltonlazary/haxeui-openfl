@@ -58,6 +58,7 @@ class ComponentImpl extends ComponentBase {
         if (component.parentComponent == null && Screen.instance.rootComponents.indexOf(component) != -1) {
             Screen.instance.rootComponents.remove(component);
             Screen.instance._topLevelComponents.remove(component); // TODO: look into removing and using rootComponents only, order / ready() is important
+            FocusManager.instance.removeView(component);
         }
     }
     
@@ -184,7 +185,7 @@ class ComponentImpl extends ComponentBase {
         this.useHandCursor = useHandCursor;
         for (n in 0...this.numChildren) {
             var c = this.getChildAt(n);
-            if (Std.is(c, Sprite)) {
+            if ((c is Sprite)) {
                 cast(c, Sprite).buttonMode = useHandCursor;
                 cast(c, Sprite).useHandCursor = useHandCursor;
             }
@@ -233,7 +234,7 @@ class ComponentImpl extends ComponentBase {
         var p:DisplayObjectContainer = this;
         var s:DisplayObjectContainer = null;
         while (p != null) {
-            if (Std.is(p, ComponentImpl) == false) {
+            if ((p is ComponentImpl) == false) {
                 s = p;
                 break;
             }

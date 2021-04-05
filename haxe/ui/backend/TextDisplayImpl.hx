@@ -90,10 +90,6 @@ class TextDisplayImpl extends TextBase {
 
         textField.defaultTextFormat = format;
         textField.setTextFormat(format);
-        if (_htmlText != null) {
-            textField.htmlText = normalizeText(_htmlText);
-        }
-
         if (textField.wordWrap != _displayData.wordWrap) {
             textField.wordWrap = _displayData.wordWrap;
             measureTextRequired = true;
@@ -113,7 +109,7 @@ class TextDisplayImpl extends TextBase {
         
         #if html5
         textField.x = _left;
-        textField.y = _top - 2;
+        textField.y = _top - 3;
         #elseif flash
         textField.x = _left - 3;
         textField.y = _top - 3;
@@ -161,7 +157,14 @@ class TextDisplayImpl extends TextBase {
         #end
         
         _textWidth = Math.round(_textWidth);
+        if (_textWidth % 2 != 0) {
+            _textWidth += 1;
+        }
         _textHeight = Math.round(_textHeight);
+    }
+    
+    private override function get_supportsHtml():Bool {
+        return true;
     }
     
     private function normalizeText(text:String):String {

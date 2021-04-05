@@ -10,7 +10,6 @@ import openfl.display.Bitmap;
 import openfl.display.BitmapData;
 import openfl.display.Loader;
 import openfl.events.Event;
-import openfl.text.Font;
 import openfl.utils.ByteArray;
 
 class AssetsImpl extends AssetsBase {
@@ -24,32 +23,33 @@ class AssetsImpl extends AssetsBase {
     }
 
     private override function getImageInternal(resourceId:String, callback:ImageInfo->Void):Void {
-        var imageInfo:ImageInfo = null;
         if (Assets.exists(resourceId) == true) {
             if(Path.extension(resourceId).toLowerCase() == "svg") {
                 #if svg
                 var content:String = Assets.getText(resourceId);
                 var svg = new format.SVG(content);
-                imageInfo = {
-                    data: svg,
+                var imageInfo:ImageInfo = {
+                    svg: svg,
                     width: Std.int(svg.data.width),
                     height: Std.int(svg.data.height)
                 };
+                callback(imageInfo);
                 #else
                 trace("WARNING: SVG not supported");
                 #end
+            } else {
+                Assets.loadBitmapData(resourceId).onComplete(function(bmpData:BitmapData) {
+                    var imageInfo:ImageInfo = {
+                        data: bmpData,
+                        width: bmpData.width,
+                        height: bmpData.height
+                    }
+                    callback(imageInfo);
+                });
             }
-            else {
-                var bmpData:BitmapData = Assets.getBitmapData(resourceId);
-                imageInfo = {
-                    data: bmpData,
-                    width: bmpData.width,
-                    height: bmpData.height
-                }
-            }
+        } else {
+            callback(null);
         }
-
-        callback(imageInfo);
     }
 
     private override function getImageFromHaxeResource(resourceId:String, callback:String->ImageInfo->Void) {
@@ -59,7 +59,7 @@ class AssetsImpl extends AssetsBase {
             var svgContent = Resource.getString(resourceId);
             var svg = new format.SVG(svgContent);
             imageInfo = {
-                data: svg,
+                svg: svg,
                 width: Std.int(svg.data.width),
                 height: Std.int(svg.data.height)
             }
@@ -126,13 +126,50 @@ class AssetsImpl extends AssetsBase {
             return;
         }
         
-        var font = Font.fromBytes(bytes);
-        Font.registerFont(font);
+        #if (js && html5)
+        
+        loadWebFontFontResourceDynamically(resourceId, bytes, callback);
+        
+        #else
+        
+        var font = openfl.text.Font.fromBytes(bytes);
+        openfl.text.Font.registerFont(font);
         var fontInfo = {
             data: font.fontName
         }
         callback(resourceId, fontInfo);
+        
+        #end
     }
+    
+    #if (js && html5)
+    private function loadWebFontFontResourceDynamically(resourceId:String, bytes:Bytes, callback:String->FontInfo->Void) {
+        var fontFamilyParts = resourceId.split("/");
+        var fontFamily = fontFamilyParts[fontFamilyParts.length - 1];
+        if (fontFamily.indexOf(".") != -1) {
+            fontFamily = fontFamily.substr(0, fontFamily.indexOf("."));
+        }
+        
+        var fontFace = new js.html.FontFace(fontFamily, bytes.getData());
+        fontFace.load().then(function(loadedFace) {
+            js.Browser.document.fonts.add(loadedFace);
+            haxe.ui.backend.openfl.util.FontDetect.onFontLoaded(fontFamily, function(f) {
+                var fontInfo = {
+                    data: fontFamily
+                }
+                callback(resourceId, fontInfo);
+            }, function(f) {
+                callback(resourceId, null);
+            });
+        }).catchError(function(error) {
+            #if debug
+            trace("WARNING: problem loading font '" + resourceId + "' (" + error + ")");
+            #end
+			// error occurred
+            callback(resourceId, null);
+		});
+    }
+    #end
     
     //***********************************************************************************************************
     // Util functions
